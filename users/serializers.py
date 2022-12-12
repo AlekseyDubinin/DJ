@@ -3,6 +3,12 @@ from rest_framework import serializers
 from users.models import User, Location
 
 
+class CheckRamblerEmail:
+    def __call__(self, value):
+        if not value.endswith("rambler.ru"):
+            raise serializers.ValidationError("Only rambler users can register")
+
+
 class LocationSerializer(serializers.ModelSerializer):
     class Meta:
         model = Location
@@ -28,6 +34,7 @@ class UserCreateSerializer(serializers.ModelSerializer):
         many=True,
         slug_field="name"
     )
+    email = serializers.EmailField(validators=[CheckRamblerEmail()])
 
     def is_valid(self, raise_exception=False):
         self._locations = self.initial_data.pop("locations")
@@ -35,6 +42,7 @@ class UserCreateSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         user = User.objects.create(**validated_data)
+
         user.set_password(validated_data["password"])
         user.save()
 
